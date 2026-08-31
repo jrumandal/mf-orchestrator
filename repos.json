@@ -1,0 +1,86 @@
+{
+  "$schema": "./repos.schema.json",
+  "version": 1,
+  "owner": "jrumandal",
+  "registry": [
+    {
+      "name": "shared",
+      "type": "library",
+      "description": "Frontend shared packages (contracts, db, design-tokens, event-bus, bridge)",
+      "publish": true,
+      "dependsOn": [],
+      "packages": ["@shared/contracts", "@shared/db", "@shared/design-tokens", "@shared/event-bus", "@shared/bridge"]
+    },
+    {
+      "name": "server-shared",
+      "type": "library",
+      "description": "Shared NestJS server library (Prisma, health, auth, DTOs)",
+      "publish": true,
+      "dependsOn": [],
+      "packages": ["@server/shared"]
+    },
+    {
+      "name": "cart",
+      "type": "mf",
+      "description": "Cart micro-frontend (React 19)",
+      "publish": false,
+      "dependsOn": ["shared"]
+    },
+    {
+      "name": "catalog",
+      "type": "mf",
+      "description": "Catalog micro-frontend (Angular 20)",
+      "publish": false,
+      "dependsOn": ["shared"]
+    },
+    {
+      "name": "user",
+      "type": "mf",
+      "description": "User micro-frontend (Vue 3.5)",
+      "publish": false,
+      "dependsOn": ["shared"]
+    },
+    {
+      "name": "gateway",
+      "type": "gateway",
+      "description": "GraphQL API gateway (NestJS + Apollo stitching)",
+      "publish": false,
+      "dependsOn": ["server-shared"]
+    },
+    {
+      "name": "catalog-svc",
+      "type": "service",
+      "description": "Catalog service (NestJS + Prisma)",
+      "publish": false,
+      "dependsOn": ["server-shared"]
+    },
+    {
+      "name": "cart-svc",
+      "type": "service",
+      "description": "Cart service (NestJS + Prisma)",
+      "publish": false,
+      "dependsOn": ["server-shared"]
+    },
+    {
+      "name": "user-svc",
+      "type": "service",
+      "description": "User service (NestJS + Prisma)",
+      "publish": false,
+      "dependsOn": ["server-shared"]
+    },
+    {
+      "name": "shell",
+      "type": "host",
+      "description": "Shell host app (Angular 20 + Tailwind v4, loads MFs)",
+      "publish": false,
+      "dependsOn": ["shared", "cart", "catalog", "user"]
+    },
+    {
+      "name": "mobile",
+      "type": "mobile",
+      "description": "Capacitor hybrid wrapper around the shell build",
+      "publish": false,
+      "dependsOn": ["shell"]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+name: orchestrator-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate graph + orchestration scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: jrumandal/mf-orchestrator
+          path: mf-orchestrator
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Topological sort (release order)
+        working-directory: mf-orchestrator
+        run: node scripts/topo-sort.mjs
+
+      - name: Dry-run orchestrate (patch)
+        working-directory: mf-orchestrator
+        run: node scripts/orchestrate.mjs patch --dry-run --root ..
+
+      - name: Syntax-check all scripts
+        working-directory: mf-orchestrator
+        run: |
+          node --check scripts/topo-sort.mjs
+          node --check scripts/bump-version.mjs
+          node --check scripts/orchestrate.mjs
+          node --check scripts/trigger-release.mjs
+          echo "all scripts OK"

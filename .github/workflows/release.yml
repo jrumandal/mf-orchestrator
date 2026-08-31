@@ -1,0 +1,51 @@
+name: orchestrator-release
+
+# Manual cross-repo release fan-out.
+# Triggers each repo's ci.yml (in topological order) via workflow_dispatch,
+# waiting for each to complete before dispatching the next.
+# Requires a GITHUB_TOKEN with `workflow` scope (repo admin PAT recommended).
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump"
+        required: true
+        default: "patch"
+        type: choice
+        options: [patch, minor, major]
+      owner:
+        description: "GitHub owner of the repos"
+        required: false
+        default: "jrumandal"
+        type: string
+
+concurrency:
+  group: orchestrator-release
+  cancel-in-progress: false
+
+jobs:
+  fan-out:
+    name: Fan-out release (topological order)
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      actions: read
+      workflow: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: jrumandal/mf-orchestrator
+          path: mf-orchestrator
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Trigger release fan-out
+        working-directory: mf-orchestrator
+        env:
+          GITHUB_TOKEN: *** secrets.GITHUB_TOKEN }}
+          OWNER: ${{ inputs.owner }}
+        run: node scripts/trigger-release.mjs ${{ inputs.bump }}
