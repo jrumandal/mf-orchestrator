@@ -46,6 +46,6 @@ jobs:
       - name: Trigger release fan-out
         working-directory: mf-orchestrator
         env:
-          GITHUB_TOKEN: *** secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OWNER: ${{ inputs.owner }}
         run: node scripts/trigger-release.mjs ${{ inputs.bump }}
