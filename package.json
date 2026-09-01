@@ -1,5 +1,5 @@
 {
-  "name": "mf-orchestrator",
+  "name": "@jrumandal/mf-orchestrator",
   "version": "0.0.1",
   "private": true,
   "description": "Cross-repo CI/CD orchestration for the micro-frontend platform (release ordering, version bumping, publish fan-out)",
