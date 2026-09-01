@@ -6,10 +6,10 @@
     {
       "name": "shared",
       "type": "library",
-      "description": "Frontend shared packages (contracts, db, design-tokens, event-bus, bridge)",
+      "description": "Frontend shared packages (contracts, design-tokens, event-bus, bridge)",
       "publish": true,
       "dependsOn": [],
-      "packages": ["@shared/contracts", "@shared/db", "@shared/design-tokens", "@shared/event-bus", "@shared/bridge"]
+      "packages": ["@jrumandal/contracts", "@jrumandal/design-tokens", "@jrumandal/event-bus", "@jrumandal/bridge"]
     },
     {
       "name": "server-shared",
@@ -17,7 +17,7 @@
       "description": "Shared NestJS server library (Prisma, health, auth, DTOs)",
       "publish": true,
       "dependsOn": [],
-      "packages": ["@server/shared"]
+      "packages": ["@jrumandal/shared"]
     },
     {
       "name": "cart",
