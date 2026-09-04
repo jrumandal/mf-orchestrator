@@ -110,6 +110,62 @@ GITHUB_TOKEN=*** OWNER=jrumandal node scripts/trigger-release.mjs patch
   `workflow: write` (a repo-admin PAT is recommended, since the default `GITHUB_TOKEN`
   cannot dispatch workflows on other repos).
 
+## Docker deployment
+
+The full stack (7 services) is deployed with Docker Compose. The images are built with
+**multi-stage Dockerfiles** so that dependencies are installed **at build time** and only
+the runtime artifacts are shipped in the final image — this is what keeps the images small.
+
+### Services & ports
+
+| service | port | image |
+| --- | --- | --- |
+| `postgres` | 5432 | `postgres:16-alpine` |
+| `pgadmin` | 5050 | `dpage/pgadmin4:8` |
+| `catalog-svc` | 4001 | `mf/catalog-svc:latest` |
+| `cart-svc` | 4002 | `mf/cart-svc:latest` |
+| `user-svc` | 4003 | `mf/user-svc:latest` |
+| `gateway` | 4200 | `mf/gateway:latest` |
+| `shell` | 4300 | `mf/shell:latest` |
+
+### Image sizes (multi-stage, verified)
+
+| image | before (single-stage) | after (multi-stage) | reduction |
+| --- | --- | --- | --- |
+| `mf/shell:latest` | 2.3GB | **333MB** | ~85% |
+| `mf/gateway:latest` | ~2.83GB | **~750MB** | ~73% |
+| `mf/catalog-svc:latest` | ~2.83GB | **~750MB** | ~73% |
+| `mf/cart-svc:latest` | ~2.83GB | **~750MB** | ~73% |
+| `mf/user-svc:latest` | ~2.83GB | **~750MB** | ~73% |
+
+### How the multi-stage builds work
+
+- **Shell** (`Dockerfile.shell`): the build stage runs `pnpm install` + `ng build`. The
+  runtime stage copies **only** `dist/shell/` — the fully-bundled `server/server.mjs`
+  (the `@jrumandal/*` packages are bundled in, not external) plus the `browser/` assets.
+  The final image has **zero `node_modules`**; it only needs `node` to run
+  `node dist/shell/server/server.mjs`.
+- **Backends** (`Dockerfile.gateway`, `Dockerfile.catalog-svc`, `Dockerfile.cart-svc`,
+  `Dockerfile.user-svc`): the build stage runs `pnpm install` +
+  `cd server-shared && pnpm prisma:generate` + `tsc`. The deploy stage runs
+  `pnpm deploy --legacy -P` (production-only, no devDependencies) and then copies the
+  **generated Prisma client** into the deploy target (see gotcha below).
+
+### Gotchas
+
+- **Prisma client stub vs. real client.** `pnpm deploy` carries the registry **stub**
+  `.prisma/client` (a `default.js` that throws "did not initialize yet"). The **real**
+  generated client (with the query-engine `.so.node`) is written by `prisma generate`
+  into the `server-shared` package's `node_modules`. The Dockerfile must therefore
+  locate the real client by `*.so.node` presence, then `rm -rf` the stub, `mkdir -p`
+  the parent, and `cp -r` the real client in — a plain `cp -r` would **nest** the real
+  client inside the stub, and `cp -r` does not create intermediate directories.
+- **Layer caching masks errors.** When verifying a changed `RUN` step, always build with
+  `--no-cache` — a cached layer will skip the step and hide a real failure.
+- **Compose uses `image:`, not `build:`.** Build each image explicitly from the context
+  dir: `docker build -f Dockerfile.<svc> -t mf/<svc>:latest .`, then
+  `docker compose up -d`.
+
 ## Notes & gotchas
 
 - **Tolerant of missing siblings.** `bump-version.mjs` skips a repo gracefully when its
